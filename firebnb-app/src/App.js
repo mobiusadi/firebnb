@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import './styles.css';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -18,38 +18,64 @@ const fireIncidents = [
     id: 1,
     title: "Apartment Building Fire",
     location: { latitude: 53.3498, longitude: -6.2603 },
-    imageUrl: "https://static.independent.co.uk/2025/01/17/07/2025-01-17T073607Z_1232156219_RC2JBCALUFF6_RTRMADP_3_CALIFORNIA-VISTRA-FIRE.jpg", // Apartment fire
+    imageUrl: "https://static.independent.co.uk/2025/01/17/07/2025-01-17T073607Z_1232156219_RC2JBCALUFF6_RTRMADP_3_CALIFORNIA-VISTRA-FIRE.jpg",
     newsLinks: ["https://www.rte.ie/news/", "https://www.irishtimes.com/news/"],
   },
   {
     id: 2,
     title: "Warehouse Blaze",
     location: { latitude: 53.3550, longitude: -6.2750 },
-    imageUrl: "https://static01.nyt.com/images/2024/07/27/lens/27xp-highway-fire/27xp-highway-fire-googleFourByThree.png", // Warehouse fire
+    imageUrl: "https://static01.nyt.com/images/2024/07/27/lens/27xp-highway-fire/27xp-highway-fire-googleFourByThree.png",
     newsLinks: ["https://www.independent.ie/news/", "https://www.breakingnews.ie/"],
   },
   {
     id: 3,
     title: "House Fire Incident",
     location: { latitude: 53.3400, longitude: -6.2500 },
-    imageUrl: "https://ca-times.brightspotcdn.com/dims4/default/b32344c/2147483647/strip/true/crop/1920x1080+0+0/resize/1200x675!/quality/75/?url=https%3A%2F%2Fcalifornia-times-brightspot.s3.amazonaws.com%2F8a%2Fba%2Fd255da624143afced5d2ff4b1873%2Fap25017410289619.jpg", // House fire
+    imageUrl: "https://ca-times.brightspotcdn.com/dims4/default/b32344c/2147483647/strip/true/crop/1920x1080+0+0/resize/1200x675!/quality/75/?url=https%3A%2F%2Fcalifornia-times-brightspot.s3.amazonaws.com%2F8a%2Fba%2Fd255da624143afced5d2ff4b1873%2Fap25017410289619.jpg",
     newsLinks: ["https://www.thejournal.ie/news/", "https://www.nationalgeographic.com/"],
   },
-  // Feel free to add more incidents with similar imageUrls
 ];
 
 function App() {
+  const [activeIncidentId, setActiveIncidentId] = useState(null);
+  const mapRef = useRef(null);
+
+  const handleMarkerClick = (incidentId) => {
+    setActiveIncidentId(incidentId);
+  };
+
+  const handleCardClick = (incidentId) => {
+    setActiveIncidentId(incidentId);
+    const map = mapRef.current;
+    const selectedIncident = fireIncidents.find(incident => incident.id === incidentId);
+    if (map && selectedIncident) {
+      map.flyTo([selectedIncident.location.latitude, selectedIncident.location.longitude], 15);
+    }
+  };
+
   return (
     <div>
       <h1>FireBnB - Incident Map</h1>
-      <MapContainer center={[53.3498, -6.2603]} zoom={13} style={{ height: '500px', width: '100%' }}>
+      <MapContainer
+        center={[53.3498, -6.2603]}
+        zoom={13}
+        style={{ height: '500px', width: '100%' }}
+        ref={mapRef}
+      >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         {fireIncidents.map(incident => (
-          <Marker key={incident.id} position={[incident.location.latitude, incident.location.longitude]}>
-            <Popup>
+          <Marker
+            key={incident.id}
+            position={[incident.location.latitude, incident.location.longitude]}
+          >
+            <Popup
+              onOpen={() => handleMarkerClick(incident.id)}
+              onClose={() => setActiveIncidentId(null)}
+            >
               <h3>{incident.title}</h3>
               <img src={incident.imageUrl} alt={incident.title} style={{ width: '100px', height: 'auto' }} />
               <ul>
@@ -66,7 +92,16 @@ function App() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginTop: '20px', padding: '20px' }}>
         {fireIncidents.map(incident => (
-          <div key={incident.id} style={{ border: '1px solid #ccc', padding: '15px', borderRadius: '8px' }}>
+          <div
+            key={incident.id}
+            style={{
+              border: incident.id === activeIncidentId ? '3px solid blue' : '1px solid #ccc',
+              padding: '15px',
+              borderRadius: '8px',
+              cursor: 'pointer',
+            }}
+            onClick={() => handleCardClick(incident.id)}
+          >
             <h3>{incident.title}</h3>
             <img src={incident.imageUrl} alt={incident.title} style={{ width: '100%', height: 'auto', marginBottom: '10px' }} />
             <p>Location: {incident.location.latitude}, {incident.location.longitude}</p>
